@@ -1,6 +1,8 @@
-# 燕青门 · AI 音乐 MV 项目
+# Music_video_AI · 燕青门 AI 音乐 MV
 
 > 从歌词到完整音乐 MV 的全流程开源方案
+
+GitHub: `https://github.com/MIutopia/Music_video_AI`
 
 ## 项目简介
 
