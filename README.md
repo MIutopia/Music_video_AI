@@ -26,7 +26,7 @@ GitHub: `https://github.com/MIutopia/Music_video_AI`
 |------|------|
 | 本地显卡 | 仅 2GB VRAM（够用） |
 | 本地工具 | ffmpeg |
-| 云端平台 | Suno 中文版（suno.hk）、可灵 Kling（免费额度） |
+| 云端平台 | ACE-Step（acemusic.ai 免费）、可灵 Kling（免费额度） |
 
 ## 项目结构
 
