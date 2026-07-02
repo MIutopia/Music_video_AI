@@ -1,0 +1,21 @@
+# 音频文件（大文件，自己生成）
+audio/*.wav
+audio/*.mp3
+
+# 原始视频素材（从 Kling 下载，大文件）
+videos/raw/*.mp4
+videos/raw/*.webm
+
+# 中间处理文件
+videos/processed/*.mp4
+videos/normalized_*.mp4
+videos/merged_*.mp4
+
+# 输出成品
+output/*.mp4
+output/*.mov
+
+# 系统文件
+Thumbs.db
+.DS_Store
+*.log
