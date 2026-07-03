@@ -5,6 +5,21 @@
 # ============================================================
 
 import os, subprocess, time, glob
+import importlib.util
+
+# 尝试加载特效模块
+FX_AVAILABLE = False
+fx_spec = importlib.util.spec_from_file_location(
+    "effects",
+    os.path.join(os.path.dirname(__file__), "effects.py")
+)
+if fx_spec and fx_spec.loader:
+    try:
+        effects = importlib.util.module_from_spec(fx_spec)
+        fx_spec.loader.exec_module(effects)
+        FX_AVAILABLE = True
+    except:
+        pass
 
 # ============================================================
 # 配置
@@ -201,6 +216,18 @@ for i, (name, dur, cam, particle) in enumerate(SEGMENTS, 1):
 print(f"  粒子层完成: {len(particle_clips)} 段")
 
 # ============================================================
+# 步骤1.7：应用特殊动画效果（史书展开、剑花等）
+# ============================================================
+if FX_AVAILABLE:
+    print("\n  应用特殊动画效果...")
+    fx_results = effects.apply_effects(RAW_DIR, CLIP_DIR)
+    # 记录哪些片段被特效替换了（用于后续跳过普通Ken Burns处理）
+    fx_names = {name for name, _ in fx_results}
+else:
+    print("\n  ⚠️ 未找到特效模块，跳过动画效果")
+    fx_names = set()
+
+# ============================================================
 # 步骤2：合成（Ken Burns + 粒子叠合 + 古风调色 + 字幕 + 音频）
 # ============================================================
 print("\n[2/3] 合成最终视频...")
@@ -295,6 +322,22 @@ for i, (name, dur, cam, particle) in enumerate(SEGMENTS, 1):
     subprocess.run(cmd)
 
 print("  所有片段合成完成")
+
+# 特效片段覆盖对应普通片段（如果有）
+if FX_AVAILABLE and fx_results:
+    print("\n  替换特效片段...")
+    for name, fx_path in fx_results:
+        # 找到这个片段的序号
+        for i, (seg_name, _, _, _) in enumerate(SEGMENTS, 1):
+            if seg_name == name:
+                num = f"{i:02d}"
+                target = os.path.join(CLIP_DIR, f"graded_{num}.mp4")
+                if os.path.exists(fx_path):
+                    subprocess.run(["cp" if os.name != "nt" else "copy",
+                                    fx_path, target],
+                                   shell=(os.name == "nt"))
+                    print(f"   {name} → 替换为特效版")
+                break
 
 # ============================================================
 # 步骤3：拼接 + 字幕 + 音频
