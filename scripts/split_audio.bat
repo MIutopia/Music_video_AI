@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 title 燕青门 - 音频按分镜切分
 
 echo ╔══════════════════════════════════════════════════════════╗
-echo ║    燕青门 · 按歌词段落切分音频（19段）                  ║
+echo ║    燕青门 · 按歌词段落切分音频（21段）                  ║
 echo ╚══════════════════════════════════════════════════════════╝
 echo.
 
@@ -59,40 +59,42 @@ set /a I=2*60+17
 set /a J=2*60+32
 call :split_seg 12  !I! !J! "间奏·星河"
 
-REM 女声Verse3 2:32-2:49 — 1 段
+REM 女声Verse3 2:32-2:49 — 拆成 2 段（即梦最长15秒）
 set /a K=2*60+32
-set /a L=2*60+49
-call :split_seg 13  !K! !L! "女声·山河潮水"
-
-REM 男声Verse4 2:49-3:03 — 1 段
+set /a L=2*60+40
 set /a M=2*60+49
-set /a N=3*60+3
-call :split_seg 14  !M! !N! "男声·英雄史册"
+call :split_seg 13  !K! !L! "女声·星河欲转"
+call :split_seg 14  !L! !M! "女声·潮水千秋"
 
-REM 副歌Chorus2 3:03-3:40 — 拆成 3 段
-set /a O=3*60+3
-set /a P=3*60+15
-set /a Q=3*60+28
-set /a R=3*60+40
-call :split_seg 15  !O! !P! "副歌·燕青门"
-call :split_seg 16  !P! !Q! "副歌·盛世繁华"
-call :split_seg 17  !Q! !R! "副歌·白首韶华"
+REM 男声Verse4 2:49-3:03 — 1 段（S15）
+set /a N2=2*60+49
+set /a O2=3*60+3
+call :split_seg 15  !N2! !O2! "男声·英雄史册"
 
-REM 桥段 3:40-3:54 — 1 段
-set /a S=3*60+40
-set /a T=3*60+54
-call :split_seg 18  !S! !T! "桥段·盛世家园"
+REM 副歌Chorus2 3:03-3:40 — 拆成 3 段（S16-S18）
+set /a P2=3*60+3
+set /a Q2=3*60+15
+set /a R2=3*60+28
+set /a S2=3*60+40
+call :split_seg 16  !P2! !Q2! "副歌·燕青门再现"
+call :split_seg 17  !Q2! !R2! "副歌·盛世繁华"
+call :split_seg 18  !R2! !S2! "副歌·白首韶华"
 
-REM 尾声 3:54-4:22 — 拆成 2 段
-set /a U=3*60+54
-set /a V=4*60+8
-set /a W=4*60+22
-call :split_seg 19  !U! !V! "尾声·策马"
-call :split_seg 20  !V! !W! "尾声·落日"
+REM 桥段 3:40-3:54 — 1 段（S19）
+set /a T2=3*60+40
+set /a U2=3*60+54
+call :split_seg 19  !T2! !U2! "桥段·盛世家园"
+
+REM 尾声 3:54-4:22 — 拆成 2 段（S20-S21）
+set /a V2=3*60+54
+set /a W2=4*60+8
+set /a X2=4*60+22
+call :split_seg 20  !V2! !W2! "尾声·策马"
+call :split_seg 21  !W2! !X2! "尾声·落日"
 
 echo.
 echo ══════════════════════════════════════════════════════════
-echo  ✅ 完成！共 20 段音频已切分
+echo  ✅ 完成！共 21 段音频已切分
 echo  输出: %SEG_DIR%
 echo ══════════════════════════════════════════════════════════
 pause
