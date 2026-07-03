@@ -15,6 +15,8 @@ set "CLIP_DIR=%PROJ_DIR%\videos\clips"
 set "OUTPUT=%PROJ_DIR%\output\yanqingmen_mv_final.mp4"
 set "AUDIO=%PROJ_DIR%\audio\yanqingmen.wav"
 set "SUBS=%PROJ_DIR%\subs\yanqingmen.srt"
+set "FFPATH=E:\GitHub\ffmpeg\bin"
+set "PATH=%FFPATH%;%PATH%"
 
 if not exist "%CLIP_DIR%" mkdir "%CLIP_DIR%"
 if not exist "%PROJ_DIR%\output" mkdir "%PROJ_DIR%\output"

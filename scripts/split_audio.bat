@@ -12,6 +12,13 @@ echo.
 set "AUDIO_DIR=%~dp0..\audio"
 set "SEG_DIR=%AUDIO_DIR%\segments"
 set "INPUT=%AUDIO_DIR%\yanqingmen.wav"
+set "FFPATH=E:\GitHub\ffmpeg\bin"
+
+if not exist "%FFPATH%\ffmpeg.exe" (
+    echo ❌ 未找到 ffmpeg，请确认路径: %FFPATH%
+    pause & exit /b 1
+)
+set "PATH=%FFPATH%;%PATH%"
 
 if not exist "%INPUT%" (
     echo ❌ 未找到音频: %INPUT%

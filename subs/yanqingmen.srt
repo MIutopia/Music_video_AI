@@ -1,203 +1,199 @@
-# 燕青门 · SRT 中英双语字幕
-# ⚠️ 重要：拿到实际歌曲音频后，请用 Aegisub 重新对齐时间轴
-# 当前时间为占位值，假设歌曲长约 3 分钟
-
 1
-00:00:00,000 --> 00:00:05,000
+00:00:26,000 --> 00:00:32,000
 秋风萧萧绕古城
 Autumn wind whistles 'round the ancient town
 
 2
-00:00:05,000 --> 00:00:10,000
+00:00:32,000 --> 00:00:38,000
 茶馆巷陌 说书的人
 In teahouses and lanes, the storyteller sits
 
 3
-00:00:10,000 --> 00:00:14,000
+00:00:38,000 --> 00:00:44,000
 街角掩庭院深深
 Deep courtyards hide 'neath street corners
 
 4
-00:00:14,000 --> 00:00:19,000
+00:00:44,000 --> 00:00:50,000
 藏燕青门里几度春秋
 Within Yanqing Gate, years come and go
 
 5
-00:00:19,000 --> 00:00:22,000
+00:00:50,000 --> 00:00:54,000
 雨打磨剑痕
 Rain polishes the sword's scars
 
 6
-00:00:22,000 --> 00:00:27,000
+00:00:54,000 --> 00:00:58,000
 武医心法贯乾坤
 Martial and medical wisdom run through heaven and earth
 
 7
-00:00:27,000 --> 00:00:32,000
+00:00:58,000 --> 00:01:03,000
 他抛洒的热血仍残留温存
 The blood he shed still holds a trace of warmth
 
 8
-00:00:32,000 --> 00:00:36,000
+00:01:03,000 --> 00:01:09,000
 曾有故事中的他
 Once there was him in tales
 
 9
-00:00:36,000 --> 00:00:41,000
+00:01:09,000 --> 00:01:16,000
 义薄云天 风姿潇洒
 Righteous above all, graceful and unrestrained
 
 10
-00:00:41,000 --> 00:00:45,000
+00:01:16,000 --> 00:01:22,000
 燕青引箭生繁花
 Yanqing draws the bow, and flowers bloom
 
 11
-00:00:45,000 --> 00:00:49,000
+00:01:22,000 --> 00:01:29,000
 扶危救困名震天下
 Aiding the needy, his fame resounds across the land
 
 12
-00:00:49,000 --> 00:00:53,000
+00:01:29,000 --> 00:01:33,000
 何以为侠
 What is chivalry?
 
 13
-00:00:53,000 --> 00:00:57,000
+00:01:33,000 --> 00:01:38,000
 耳畔风声无涯
 The wind whispers endlessly by the ear
 
 14
-00:00:57,000 --> 00:01:01,000
+00:01:38,000 --> 00:01:43,000
 可寻得真英雄的回答
 Can we find the answer of a true hero?
 
 15
-00:01:01,000 --> 00:01:06,000
+00:01:43,000 --> 00:01:49,000
 燕青门前十载春夏
 Ten springs and autumns before Yanqing Gate
 
 16
-00:01:06,000 --> 00:01:10,000
+00:01:49,000 --> 00:01:55,000
 武医天术纵横天下
 Martial and medical arts prevail across the land
 
 17
-00:01:10,000 --> 00:01:15,000
+00:01:55,000 --> 00:02:06,000
 为天地 为苍生 为国为家
 For heaven and earth, for all living beings, for country and home
 
 18
-00:01:15,000 --> 00:01:20,000
+00:02:06,000 --> 00:02:10,000
 我愿用我弹指剑花
 I'd gladly use the sword flowers from my flick of the wrist
 
 19
-00:01:20,000 --> 00:01:25,000
+00:02:10,000 --> 00:02:14,000
 挽出一个盛世繁华
 To weave a prosperous age of glory
 
 20
-00:01:25,000 --> 00:01:30,000
+00:02:14,000 --> 00:02:17,000
 再许你白首韶华
 And vow to share with you the years till white hair comes
 
 21
-00:01:30,000 --> 00:01:34,000
+00:02:17,000 --> 00:02:32,000
 啊 啊 啊
 Ah, ah, ah
 
 22
-00:01:34,000 --> 00:01:38,000
+00:02:32,000 --> 00:02:36,000
 星河欲转夜未休
 Stars are about to shift, the night lingers on
 
 23
-00:01:38,000 --> 00:01:42,000
+00:02:36,000 --> 00:02:40,000
 山河浩浩 天地悠悠
 Rivers and mountains stretch vast, heaven and earth are boundless
 
 24
-00:01:42,000 --> 00:01:46,000
+00:02:40,000 --> 00:02:44,000
 潮水自翻腾不休
 The tide surges and rolls without cease
 
 25
-00:01:46,000 --> 00:01:51,000
+00:02:44,000 --> 00:02:49,000
 似燕青门里侠义千秋
 Like the eternal chivalry within Yanqing Gate
 
 26
-00:01:51,000 --> 00:01:55,000
+00:02:49,000 --> 00:02:53,000
 风云几度
 Through countless winds and clouds
 
 27
-00:01:55,000 --> 00:01:59,000
+00:02:53,000 --> 00:02:58,000
 多少英雄风流
 How many heroes lived in glory
 
 28
-00:01:59,000 --> 00:02:03,000
+00:02:58,000 --> 00:03:03,000
 史册间 一抹英魂不朽
 Between history's pages, a heroic soul remains eternal
 
 29
-00:02:03,000 --> 00:02:08,000
+00:03:03,000 --> 00:03:07,000
 燕青门前十载春夏
 Ten springs and autumns before Yanqing Gate
 
 30
-00:02:08,000 --> 00:02:12,000
+00:03:07,000 --> 00:03:11,000
 武医天术纵横天下
 Martial and medical arts prevail across the land
 
 31
-00:02:12,000 --> 00:02:17,000
+00:03:11,000 --> 00:03:15,000
 为天地 为苍生 为国为家
 For heaven and earth, for all living beings, for country and home
 
 32
-00:02:17,000 --> 00:02:22,000
+00:03:15,000 --> 00:03:20,000
 我愿用我弹指剑花
 I'd gladly use the sword flowers from my flick of the wrist
 
 33
-00:02:22,000 --> 00:02:27,000
+00:03:20,000 --> 00:03:24,000
 挽出一个盛世繁华
 To weave a prosperous age of glory
 
 34
-00:02:27,000 --> 00:02:32,000
+00:03:24,000 --> 00:03:28,000
 再许你白首韶华
 And vow to share with you the years till white hair comes
 
 35
-00:02:32,000 --> 00:02:36,000
+00:03:28,000 --> 00:03:34,000
 如今你我盛世为家
 Now we have this prosperous age as our home
 
 36
-00:02:36,000 --> 00:02:40,000
+00:03:34,000 --> 00:03:40,000
 不见昔日金戈铁马
 No longer seeing the old days of swords and armor
 
 37
-00:02:40,000 --> 00:02:45,000
+00:03:40,000 --> 00:03:47,000
 名与利 功与禄 何足记挂
 Fame and fortune, merits and ranks—what's there to care for?
 
 38
-00:02:45,000 --> 00:02:50,000
+00:03:47,000 --> 00:03:54,000
 抛却俗世扰扰纷杂
 Cast aside the chaos and noise of the mortal world
 
 39
-00:02:50,000 --> 00:02:55,000
+00:03:54,000 --> 00:04:08,000
 明朝打马 仗剑天涯
 Tomorrow we ride horses, wield swords across the land
 
 40
-00:02:55,000 --> 00:03:00,000
+00:04:08,000 --> 00:04:22,360
 共并肩 逐梦天下
 Side by side, chasing dreams across the land
