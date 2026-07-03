@@ -1,53 +1,72 @@
 # Music_video_AI · 燕青门 AI 音乐 MV
 
-> 从歌词到完整音乐 MV 的全流程开源方案
+> 从歌词到完整叙事音乐 MV 的全流程开源方案
 
 GitHub: `https://github.com/MIutopia/Music_video_AI`
+
+## 叙事风格
+
+MV 以**叙事性镜头语言**为主，按歌曲情感线设计运镜节奏：
+
+| 段落 | 情绪 | 运镜 | 时长 |
+|------|------|------|------|
+| 前奏 | 宁静引入 | 慢推/横移 | 13s×2 |
+| 女声 Verse1 | 平缓叙事 | 横移/慢推 | 12s×3 |
+| 男声 Verse2 | 情绪渐强 | 拉开/推进 | 13s×3 |
+| 副歌 Chorus1 | 🎆 高潮 | 拉远/对角 | 11s×3 |
+| 间奏 | 情绪回落 | 拉远 | 15s |
+| 女声 Verse3 | 再起 | 横移/推进 | 12s×2 |
+| 男声 Verse4 | 升华 | 拉远 | 14s |
+| 副歌 Chorus2 | 🎆 高潮再现 | 推进/横移 | 11s×3 |
+| 桥段 | 温暖收束 | 横移 | 14s |
+| 尾声 | 悠远淡出 | 对角/拉远 | 14s×2 |
 
 ## 技术路线
 
 ```
-歌词 → 网易天音 → 燕青门歌曲（4分22秒）
+歌词 → 网易天音 → 燕青门歌曲（4分22秒 · 已完成）
                             ↓
-       按歌词结构切分为 20 段小音频（每段配歌词）
+       按歌词切分为21段小音频（已完成）
                             ↓
-      通义万相图组 → 20 张统一风格古风图（每段1张）
+     百度 AI Studio + SDXL → 21张叙事古风图（进行中）
                             ↓
-     即梦图生视频 → 20 段视频（时长匹配对应音频）
+     ffmpeg Ken Burns → 每张图按叙事节奏做运镜动画
                             ↓
-     ffmpeg 拼接 + 字幕 + 原音频合成
+     古风调色 + 粒子叠加（金色光点/花瓣）
                             ↓
-               🎬 MV（音画精准同步）
+     中英双语字幕 + 原歌曲音频
+                            ↓
+               🎬 叙事 MV 成品
+```
 ```
 
 ## 使用流程
 
-### Step 0：歌曲 ✅
-`audio/yanqingmen.wav` — 已就绪
+### Step 0：歌曲 ✅ 已完成
+`audio/yanqingmen.wav` — 4分22秒
 
-### Step 1：切分音频
-双击 `scripts/split_audio.bat`
+### Step 1：音频切分 ✅ 已完成
+`audio/segments/seg_01.wav` ~ `seg_21.wav`
 
-将歌曲按歌词段落切为 20 段，每段 ≈11-17 秒
+### Step 2：百度 AI Studio 生图 ← 正在进行
+打开 https://aistudio.baidu.com → 运行 `docs/generate_images.py`
 
-### Step 2：通义万相图组生图
-打开 https://tongyi.aliyun.com/wanxiang/
+生成 21 张古风图，放入 `videos/raw/p01.png` ~ `p21.png`
 
-1. 创建**图组**，设定统一古风风格
-2. 按 `docs/prompts.md` 的 20 张 Prompt 逐一生成
-3. 下载图片
+### Step 3：一键合成
+```bash
+python scripts/build_mv.py
+```
 
-### Step 3：即梦图生视频
-打开 https://jimeng.jianying.com
-
-1. **图生视频** → 上传通义万相的图
-2. **视频时长设成与对应音频一致**（见 prompts.md 时长对照表）
-3. 下载为 `p01.mp4` ~ `p21.mp4`，放入 `videos/raw/`
-
-### Step 4：一键合成
-双击 `scripts/build_all.bat`
-
-自动完成：标准化 → 拼接 → 字幕 → 音频合成
+自动完成：
+```
+21张图 → Ken Burns动画（按叙事节奏分配运镜）
+       → 粒子叠加（金色光点/花瓣）
+       → 古风调色（青绿水墨色调）
+       → 拼接 + 中英双语字幕
+       → 合成原歌曲音频
+       → 🎬 output/yanqingmen_mv_final.mp4
+```
 
 ---
 
