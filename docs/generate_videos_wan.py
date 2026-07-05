@@ -71,14 +71,14 @@ for i, prompt in enumerate(prompts, 1):
 
     result = pipe({
         'text': prompt,
-        'num_frames': 81,
+        'num_frames': 120,    # 120帧 @ 24fps = 5秒（最大时长）
         'width': 832,
         'height': 480,
     })
     frames = result[OutputKeys.OUTPUT_VIDEO]
 
     out_path = f"{OUTPUT_DIR}/v{i:02d}.mp4"
-    imageio.mimsave(out_path, frames, fps=16, codec="libx264", quality=8)
+    imageio.mimsave(out_path, frames, fps=24, codec="libx264", quality=8)
     print(f"  ✅ v{i:02d}.mp4")
 
     torch.cuda.empty_cache()
