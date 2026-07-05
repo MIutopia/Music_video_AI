@@ -83,7 +83,8 @@ print(f"✅ 模型加载完成，显存: {torch.cuda.memory_allocated()/1024**3:
 # ============================================================
 # 2. 统一风格前缀
 # ============================================================
-STYLE_PREFIX = "古风国画青绿山水水墨诗意，16:9横轴，"
+STYLE_PREFIX = ("Chinese ink wash painting, ancient Chinese aesthetic, 16:9, "
+    "no text, no calligraphy, no seal stamp, no signature, no watermark")
 
 MASTER_SEED = 42
 
@@ -92,45 +93,45 @@ MASTER_SEED = 42
 # ============================================================
 scene_prompts = [
     # 前奏（S01-S02）
-    "秋日古城全景航拍视角，金色银杏叶覆满青瓦屋顶，斑驳城墙蜿蜒如龙，远处青山云雾缭绕，暖金夕阳光从城门洞透出，画面宁静悠远，留白构图",
-    "古城门特写仰拍，门钉铜绿斑驳，石狮威严肃穆，门缝透出院内暖光，青松枝桠从墙头探出，秋叶飘落在石阶上，庄重古朴，岁月沉淀感",
+    "ancient Chinese autumn city panoramic aerial view, golden gingko leaves on blue tiled roofs, weathered city wall, misty mountains distant, warm golden sunset light, serene timeless mood",
+    "ancient city gate close-up low angle, bronze door nails green patina, stone lion, warm light through door crack, pine branches over wall, autumn leaves on steps, sense of history",
 
     # 女声 Verse1（S03-S05）
-    "老茶馆内景，白发说书人穿灰长衫坐木椅上手执折扇，方桌青瓷茶盏热气袅袅，窗外竹影投在纸窗，暖黄烛光，光线柔和，叙事感",
-    "幽深庭院月洞门，门楣隐约可见燕青门匾额，青竹几竿探出院墙，石灯青苔，雨后青石路倒映天光，青绿主调",
-    "旧木案上泛黄经络图卷轴展开，旁有银针袋石臼草药半烛，窗外天光照在卷轴上，石阶上浅浅剑痕，暖褐暗红调，古朴神秘",
+    "traditional Chinese teahouse interior, old storyteller in grey robe sitting on wooden chair holding fan, celadon tea cup with steam, bamboo shadows on paper window, warm candlelight, soft atmosphere",
+    "deep courtyard with moon gate, plaque with Chinese characters partially visible, bamboo over wall, stone lantern with moss, rain-washed path reflecting sky, jade green tones, serene",
+    "old wooden desk with yellowed medical scroll unrolled, acupuncture needles, stone mortar with herbs, candle burning, light through window on scroll, sword marks on stone steps, ancient mystery",
 
     # 男声 Verse2（S06-S08）
-    "白衣侠客立于山巅巨岩，背对画面，长袍劲风翻飞，腰佩古剑，前方云海翻腾层叠远山，金色丁达尔光斜射，壮阔豪情，气势磅礴",
-    "侠客侧身拉弓如满月，弓弦已松，箭矢离弦化作漫天粉白花瓣旋舞，背景暮色远山晚霞，动静结合，浪漫与力量，爆发力十足",
-    "侠客低首凝视长剑，剑身映出眉眼，若有所思，背景大片留白山色流云，光影半明半暗，深沉内省",
+    "white-robed martial arts hero on mountain peak, back facing viewer, robe billowing in wind, ancient sword at waist, sea of clouds below, golden rays piercing clouds, epic grandeur",
+    "martial artist drawing bow to full moon, arrow released transforming into pink and white flower petals swirling in air, dusk sky with colorful sunset clouds, dynamic romantic powerful",
+    "hero gazing down at his longsword, blade reflecting his eyes, deep in thought, large negative space with mountain mist, half light half shadow, introspective mood",
 
     # 副歌 Chorus1（S09-S11）
-    "大气全景，燕青门宏伟建筑群，门前广场青松列植，门匾高悬，远处主殿飞檐翘角，天际晚霞绚烂，金色青绿交织，恢弘壮丽",
-    "侠客立于天地间张开双臂面向锦绣山河，脚下大地辽阔，苍穹无垠，金色阳光沐浴全身，广角构图，史诗感，胸怀天下",
-    "指尖轻弹，银色剑气从指尖绽放成一朵半透明水墨剑花，花瓣墨色到金色渐变，光芒四射，极致唯美，视觉冲击",
+    "grand panoramic view of Yanqing Men martial arts school, majestic gates, pine trees lining square, plaque hanging high, main hall with flying eaves, sunset clouds, gold and jade green, magnificent",
+    "hero standing with arms open facing magnificent rivers and mountains, vast land beneath, infinite sky, golden sunlight bathing scene, wide angle composition, epic sense",
+    "fingertip flicking, silver sword energy blooming into semi-transparent ink-wash sword flower, petals from ink black to gold, radiating light, beautiful visual impact",
 
     # 间奏（S12）
-    "深夜山巅，满天星河璀璨如瀑布倾泻，银河横跨天际，星光倒映在蜿蜒江河中，近处古塔剪影，远处山峦如墨，萤火几点，空灵静谧",
+    "deep night mountain peak, Milky Way like waterfall pouring down, starlight reflected in winding river, ancient pagoda silhouette, mountains like ink wash, fireflies, ethereal tranquil",
 
     # 女声 Verse3（S13-S14）
-    "壮阔山水之间，皎洁星河倒映在奔腾江河中，两岸山峦层叠如黛，天地苍茫，河面水光潋滟波光粼粼，夜空深邃，清冷蓝紫调",
-    "惊涛骇浪拍击海中礁石，礁石屹立千百年纹丝不动，浪花飞溅如碎玉崩裂，远景壮丽山河与暗蓝夜空，力量感，永恒与坚韧",
+    "magnificent landscape, bright starry river reflected in surging river, layered mountain banks, vast sky and earth, river surface shimmering, deep night sky, cool blue-purple tones",
+    "huge waves crashing against sea reef standing firm for thousands of years, spray flying like broken jade, distant mountains and dark blue night sky, power and eternity",
 
     # 男声 Verse4（S15）
-    "泛黄史书在案上展开，竖排墨字工整苍劲，书页间一缕金色光芒如灵魂升腾而上，两侧烛光摇曳，历代侠士剪影叠画，神圣肃穆",
+    "yellowed ancient history book opened on desk, vertical ink characters, golden light rising like soul from pages, candlelight flickering, silhouettes of legendary warriors layered over pages, sacred solemn",
 
     # 副歌 Chorus2（S16-S18）
-    "从燕青门内向外望，门槛内外光影交错，门外壮丽山河与金辉盛世，青松挺立，晚霞漫天，温暖金色调，传承与希望",
-    "繁华古都街市全景，市井安宁商铺林立，红灯笼暖光连成星河，行人谈笑孩童追逐嬉戏，金色夕阳笼罩全城，温暖富足的太平景象",
-    "夕阳下男女二人并肩剪影，头发由黑渐银白的诗意过渡，暖金色调温柔浪漫，大面积落日余晖与细小的人影形成强烈对比",
+    "looking outward from inside Yanqing Gate, light and shadow at threshold, magnificent mountains and golden prosperous age outside, pine trees, sunset clouds, warm golden tones",
+    "prosperous ancient capital city street, peaceful marketplace, shops with red lanterns, pedestrians chatting, children playing, golden sunset over city, warm prosperous scene",
+    "silhouette of couple standing side by side at sunset, hair from black to silver white, poetic warm golden tones, romantic, large sunset contrasting with small figures",
 
     # 桥段（S19）
-    "错落有致的古风院落，屋顶炊烟袅袅升腾，孩童在院中嬉戏追逐，老人坐古树下含笑看着，鸡犬相闻，秋日暖阳洒满庭院，祥和安宁",
+    "traditional Chinese courtyard houses, cooking smoke rising from roofs, children playing in yard, elderly sitting under tree smiling, warm autumn sunlight, peaceful harmony",
 
     # 尾声（S20-S21）
-    "壮阔草原天际线，一男一女双人策马奔腾向远方，骏马腾空四蹄飞扬，衣袂飘举，夕阳金黄光芒洒满广袤草原，广角跟拍，自由速度",
-    "双人骑马远去的背影在地平线上越来越小，逐渐融入巨大的金色落日之中，漫天绚烂暖色晚霞，画面三分法构图，悠远意境，结尾留白余韵"
+    "vast grassland, two riders galloping on horses toward distance, horses leaping, robes flying, golden sunset light flooding prairie, freedom and speed",
+    "two riders silhouettes growing smaller on horizon, merging into huge golden setting sun, brilliant sunset clouds, rule of thirds, lingering mood, ending with vast emptiness",
 ]
 
 # ============================================================
@@ -144,11 +145,9 @@ for i, prompt in enumerate(scene_prompts, 1):
     _, _, mood, tone = audio_features[i-1]
 
     # 合成 final prompt = 风格前缀 + 场景描述 + 色调 + 情绪
-    full_prompt = f"{STYLE_PREFIX}{prompt}，{tone}调，{mood}"
-
-    # 确保不超过CLIP 77 token限制
-    if len(full_prompt) > 180:  # 中文约2.5字符/token
-        full_prompt = f"{STYLE_PREFIX}{prompt}"
+    mood_en = {"宁静":"serene quiet", "平缓":"calm gentle", "温暖":"warm emotional"}
+    tone_en = {"暖色":"warm golden tones", "中性":"jade green neutral tones"}
+    full_prompt = f"{STYLE_PREFIX}, {prompt}, {tone_en.get(tone, '')}, {mood_en.get(mood, '')}"
 
     generator = torch.Generator("cuda").manual_seed(MASTER_SEED + i)
 
