@@ -6,6 +6,7 @@
 
 import torch
 from modelscope import pipeline
+from modelscope.outputs import OutputKeys
 import os, gc, time
 
 # ============================================================
@@ -17,6 +18,7 @@ pipe = pipeline(
     "text-to-image",
     model="Kwai-Kolors/Kolors",
     device="cuda",
+    trust_remote_code=True,
 )
 print("✅ Kolors 加载成功\n")
 
