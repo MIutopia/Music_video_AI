@@ -72,8 +72,8 @@ for i, prompt in enumerate(prompts, 1):
     result = pipe({
         'text': prompt,
         'num_frames': 120,    # 120帧 @ 24fps = 5秒（最大时长）
-        'width': 832,
-        'height': 480,
+        'width': 1280,
+        'height': 704,        # 720P，Wan2.2 支持的最高分辨率
     })
     frames = result[OutputKeys.OUTPUT_VIDEO]
 
