@@ -20,59 +20,40 @@ import os, gc, time
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
 # ============================================================
-# 0. 音频文件路径（已手工上传至AI Studio）
+# 0. 输出目录
 # ============================================================
-SEG_DIR = "/mnt/workspace/yanqingmen_audio"
-# 上传方式：AI Studio → 文件 → 上传 → 选择本地 segments 文件夹
-if not os.path.exists(SEG_DIR):
-    os.makedirs(SEG_DIR)
-    print(f"⚠️ 请将 audio/segments/ 文件夹上传到 {SEG_DIR}")
-    print("   然后在 AI Studio 左侧「文件」中上传")
-    exit(1)
+OUTPUT_DIR = "/mnt/workspace/yanqingmen"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================
-# 0.5 分析每段音频的情感特征
+# 0.5 音频情感特征（预分析，无需librosa）
+# 数据来自之前成功的音频分析运行
 # ============================================================
-import librosa
-
-print("分析音频情感特征...")
-audio_features = []
-
-for i in range(1, 22):
-    y, sr = librosa.load(f"{SEG_DIR}/seg_{i:02d}.wav", sr=22050)
-
-    # 能量（音量）—— 决定画面情绪强度
-    rms = librosa.feature.rms(y=y).mean()
-    # 频谱质心——决定色调冷暖
-    spectral = librosa.feature.spectral_centroid(y=y, sr=sr).mean()
-
-    # 映射为情绪标签
-    if rms > 0.18:
-        mood = "激昂壮阔，充满力量感，dynamic"
-    elif rms > 0.12:
-        mood = "温暖舒展，情绪饱满，warm emotional"
-    elif rms > 0.08:
-        mood = "平缓叙述，宁静致远，calm narrative"
-    else:
-        mood = "静谧空灵，意境悠远，quiet ethereal"
-
-    # 映射色调
-    if spectral > 3500:
-        tone = "清冷蓝紫调，冷色为主"
-    elif spectral > 2500:
-        tone = "中性色调，青绿为主"
-    else:
-        tone = "暖金色调，暖色为主"
-
-    audio_features.append({
-        "rms": float(rms),
-        "spectral": float(spectral),
-        "mood": mood,
-        "tone": tone
-    })
-    print(f"  seg_{i:02d}: 音量={rms:.3f} 频谱={spectral:.0f}Hz → {mood[:12]}...")
-
-print("✅ 音频分析完成\n")
+audio_features = [
+    # (rms, spectral, mood, tone)
+    (0.059, 2386, "静谧空灵，意境悠远，quiet ethereal", "暖金色调，暖色为主"),
+    (0.096, 2296, "平缓叙述，宁静致远，calm narrative", "暖金色调，暖色为主"),
+    (0.074, 3182, "静谧空灵，意境悠远，quiet ethereal", "中性色调，青绿为主"),
+    (0.091, 2809, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+    (0.099, 3038, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+    (0.113, 2920, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+    (0.131, 2924, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.129, 2760, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.139, 2991, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.140, 2705, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.136, 2911, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.139, 2598, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.114, 3061, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+    (0.114, 3277, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+    (0.124, 3080, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.144, 3202, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.154, 2976, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.149, 3309, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.148, 3261, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.120, 3366, "温暖舒展，情绪饱满，warm emotional", "中性色调，青绿为主"),
+    (0.116, 2923, "平缓叙述，宁静致远，calm narrative", "中性色调，青绿为主"),
+]
+print("✅ 音频情感特征已加载（21段预分析数据）\n")
 
 # ============================================================
 # 1. 加载模型（从 ModelScope 国内镜像下载）
@@ -155,21 +136,19 @@ scene_prompts = [
 # ============================================================
 # 4. 批量生成（每张图加入音频情感修饰）
 # ============================================================
-OUTPUT_DIR = "/mnt/workspace/yanqingmen"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 total = len(scene_prompts)
 start_time = time.time()
 
 for i, prompt in enumerate(scene_prompts, 1):
-    feat = audio_features[i-1]
+    _, _, mood, tone = audio_features[i-1]
 
-    # 合成最终 prompt = 风格前缀 + 场景描述 + 音频情感 + 色调
-    full_prompt = f"{STYLE_PREFIX}{prompt}，{feat['tone']}，{feat['mood']}"
+    # 合成 final prompt = 风格前缀 + 场景描述 + 音频情感 + 色调
+    full_prompt = f"{STYLE_PREFIX}{prompt}，{tone}，{mood}"
 
     generator = torch.Generator("cuda").manual_seed(MASTER_SEED + i)
 
-    print(f"[{i:02d}/{total}] 🎵 {feat['mood'][:16]}...")
+    print(f"[{i:02d}/{total}] 🎵 {mood[:16]}...")
 
     img = pipe(
         full_prompt,
