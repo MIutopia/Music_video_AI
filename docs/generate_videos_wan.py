@@ -4,17 +4,16 @@
 # 运行环境：百度 AI Studio（24GB VRAM）
 # ============================================================
 
-import torch
+import torch, os, gc, time, imageio, shutil, subprocess
 from modelscope import pipeline
 from modelscope.outputs import OutputKeys
-import os, gc, time, imageio, shutil, subprocess
+
+# 模型缓存到持久化工作目录，换容器不重下
+CACHE_DIR = "/mnt/workspace/modelscache"
+os.environ['MODELSCOPE_CACHE'] = CACHE_DIR
+os.makedirs(CACHE_DIR, exist_ok=True)
 
 FFMPEG = "ffmpeg"
-
-# 清理旧缓存
-old_cache = "/mnt/workspace/.cache/modelscope/Wan-AI"
-if os.path.exists(old_cache):
-    shutil.rmtree(old_cache)
 
 # ============================================================
 # 1. 加载模型
