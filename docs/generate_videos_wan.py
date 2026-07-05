@@ -1,91 +1,142 @@
 # ============================================================
-# 燕青门 · Wan2.2-TI2V-5B 文生视频（并行方案2）
+# 燕青门 · Wan2.2-TI2V-5B 文生视频（多段拼接版）
+# 每段生成 2-3 个 5秒视频，拼接后仅需微慢放
 # 运行环境：百度 AI Studio（24GB VRAM）
-# 5B参数，官方确认4090 24GB可运行，V100同理
 # ============================================================
 
 import torch
 from modelscope import pipeline
 from modelscope.outputs import OutputKeys
-import os, gc, time, imageio
+import os, gc, time, imageio, shutil, subprocess
 
-# ============================================================
-# 0. 清理旧缓存（如果之前下了Wan2.1的不兼容文件）
-# ============================================================
-import shutil
+FFMPEG = "ffmpeg"
+
+# 清理旧缓存
 old_cache = "/mnt/workspace/.cache/modelscope/Wan-AI"
 if os.path.exists(old_cache):
-    print("清理旧缓存...")
     shutil.rmtree(old_cache)
 
 # ============================================================
-# 1. 加载 Wan2.2-TI2V-5B（24GB 稳跑）
+# 1. 加载模型
 # ============================================================
-print("加载 Wan2.2-TI2V-5B（5B参数，24GB VRAM可跑）...")
-
-pipe = pipeline(
-    "text-to-video",
-    model="Wan-AI/Wan2.2-TI2V-5B",
-    device="cuda",
-)
-print("✅ Wan2.2-TI2V-5B 加载成功")
+print("加载 Wan2.2-TI2V-5B ...")
+pipe = pipeline("text-to-video", model="Wan-AI/Wan2.2-TI2V-5B", device="cuda")
+print("✅ 加载成功\n")
 
 # ============================================================
-# 2. Prompt（Wan2.2 中文理解强，直接用中文）
+# 2. 分镜定义（每段目标时长 + 生成几个5秒视频）
 # ============================================================
-prompts = [
-    "秋日古城全景，金色银杏覆青瓦，斑驳城墙蜿蜒，夕阳暖光从城门透出，云雾缭绕远山",
-    "古城门仰拍特写，门钉铜绿，石狮威严，门缝透暖光，青松枝桠探出墙头，秋叶飘落石阶",
-    "老茶馆内景，白发说书人执折扇坐木椅，青瓷茶盏热气袅袅，窗外竹影投纸窗，暖黄烛光",
-    "幽深庭院月洞门，燕青门匾额隐约可见，青竹探墙，石灯青苔，雨后青石倒映天光",
-    "旧木案上泛黄经络图卷轴展开，银针草药半烛，窗外天光照卷轴，石阶剑痕，古朴神秘",
-    "白衣侠客立山巅巨岩，长袍劲风翻飞，云海翻腾远山层叠，丁达尔金光斜射，壮阔豪情",
-    "侠客侧身拉弓满月，箭矢离弦化作漫天粉白花瓣旋舞，暮色远山晚霞，浪漫与力量",
-    "侠客低首凝视长剑，剑身映眉眼，背景留白山色流云，光影半明半暗，深沉内省",
-    "燕青门宏伟建筑群全景，广场青松列植，门匾高悬，主殿飞檐翘角，晚霞绚烂",
-    "侠客立天地间张开双臂面向锦绣山河，脚下大地辽阔苍穹无垠，金色阳光沐浴",
-    "指尖轻弹，银色剑气绽放成半透明水墨剑花，花瓣墨色到金色渐变，光芒四射",
-    "深夜山巅，满天星河如瀑布倾泻，银河横跨天际，星光倒映江河，古塔剪影，萤火几点",
-    "壮阔山水间，皎洁星河倒映奔腾江河，两岸山峦层叠如黛，河面波光潋滟，清冷蓝紫",
-    "惊涛骇浪拍击礁石，礁石屹立千年纹丝不动，浪花飞溅如碎玉，远景山河与暗蓝夜空",
-    "泛黄史书在案上展开，竖排墨字苍劲，书页间金色光芒如灵魂升腾，烛光摇曳，侠士剪影",
-    "从燕青门内向外望，门槛内外光影交错，门外壮丽山河金辉盛世，青松晚霞",
-    "繁华古都街市，市井安宁商铺林立，红灯笼暖光连成星河，行人谈笑孩童追逐",
-    "夕阳下男女二人并肩剪影，头发由黑渐银白诗意过渡，暖金温柔浪漫",
-    "古风院落错落有致，屋顶炊烟袅袅，孩童院中嬉戏，老人古树下含笑，秋日暖阳",
-    "壮阔草原天际线，双人策马奔腾向远方，骏马腾空四蹄飞扬，夕阳金黄洒满草原",
-    "双人骑马远去背影融入巨大金色落日，漫天绚烂晚霞，结尾留白余韵"
+SCENES = [
+    # (目标时长, 生成段数, Prompt视角1, Prompt视角2)
+    (13, 3, "秋日古城全景，金色银杏覆青瓦，斑驳城墙蜿蜒，夕阳暖光从城门透出", "古城墙特写，青砖苔痕，红叶从墙头垂落，秋风吹过落叶飞舞"),
+    (13, 3, "古城门仰拍，门钉铜绿，石狮威严，门缝透暖光，青松探墙", "古城门内部视角，透过门缝看到庭院深处暖光，石阶上落叶"),
+    (12, 2, "老茶馆内景，白发说书人执折扇，青瓷茶盏热气袅袅", "茶馆窗边，竹影投在纸窗上，茶烟缭绕，光线柔和温暖"),
+    (12, 2, "幽深庭院，月洞门，燕青门匾额，青竹探墙，雨后青石路", "庭院角落，石灯青苔，雨珠从屋檐滴落，水面涟漪"),
+    (12, 2, "旧木案上泛黄经络图展开，银针草药，窗前光影交错", "石阶上剑痕特写，雨水流过剑痕，倒映天空"),
+    (13, 3, "白衣侠客立山巅，背对画面，长袍翻飞，云海金光", "侠客侧影，风吹衣袂，手握剑柄，眼神望向远方"),
+    (10, 2, "侠客拉弓如满月，箭尖寒光，花瓣纷飞", "弓箭特写，手指松开弓弦瞬间，花瓣在空中绽放"),
+    (13, 3, "侠客低首凝视长剑，剑身映眉眼，留白背景", "剑锋特写，寒光流转，映出侠客模糊面庞"),
+    (9, 2, "燕青门全景，青松列植，门匾高悬，晚霞绚烂", "燕青门内仰望飞檐，檐角铜铃，夕阳穿过雕花窗"),
+    (11, 2, "侠客张开双臂面向山河，金色阳光沐浴", "壮阔山河大远景，人物立于天地间，渺小而坚定"),
+    (11, 2, "指尖轻弹，银色剑气绽放成水墨剑花", "剑花特写，墨色到金色渐变，光芒四射"),
+    (15, 3, "深夜星河如瀑布倾泻，银河横跨天际", "古塔剪影，萤火虫在夜色中飞舞，星光倒映水面"),
+    (12, 2, "壮阔山水，星河倒映奔腾江河，山峦层叠", "河面波光潋滟，水天一色，清冷蓝紫色调"),
+    (12, 2, "惊涛骇浪拍击礁石，浪花飞溅如碎玉", "礁石屹立千年，远景山河与暗蓝夜空"),
+    (14, 3, "泛黄史书展开，金色光芒从书页升腾", "烛光摇曳，墨字苍劲，侠士剪影叠画于书页"),
+    (9, 2, "从燕青门内向外望，门外山河金辉", "门槛光影交错，青松晚霞，温暖金色"),
+    (11, 2, "繁华古都街市，商铺林立，灯笼连成星河", "市井近景，孩童追逐，行人谈笑，夕阳笼罩"),
+    (11, 2, "夕阳下男女并肩剪影，头发从黑到银白", "落日余晖剪影，温柔浪漫，大面积天空留白"),
+    (14, 3, "古风院落，炊烟袅袅，孩童嬉戏，老人含笑", "院落秋色，柿子满枝，鸡犬相闻，暖阳洒落"),
+    (14, 3, "壮阔草原，双人策马奔腾，夕阳金光照草原", "马匹特写，四蹄腾空，衣袂飞扬，速度感"),
+    (14, 3, "骑马远去背影融入金色落日，晚霞漫天", "地平线远景，人影越来越小，融入余晖，留白意境"),
 ]
 
 # ============================================================
-# 3. 批量生成视频
+# 3. 生成每段的多个5秒视频并拼接
 # ============================================================
-OUTPUT_DIR = "/mnt/workspace/yanqingmen_videos"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+RAW_DIR = "/mnt/workspace/yanqingmen_videos_raw"
+SEG_DIR = "/mnt/workspace/yanqingmen_videos"
+os.makedirs(RAW_DIR, exist_ok=True)
+os.makedirs(SEG_DIR, exist_ok=True)
 
-total = len(prompts)
+total = len(SCENES)
 start_time = time.time()
+clip_count = 0
 
-for i, prompt in enumerate(prompts, 1):
-    print(f"[{i:02d}/{total}] 生成视频...")
+for i, (target_dur, num_clips, prompt1, prompt2) in enumerate(SCENES, 1):
+    prompts_clips = [prompt1]
+    if num_clips >= 2:
+        prompts_clips.append(prompt2)
+    if num_clips >= 3:
+        prompts_clips.append(f"{prompt1}，不同角度")
 
-    result = pipe({
-        'text': prompt,
-        'num_frames': 120,    # 120帧 @ 24fps = 5秒（最大时长）
-        'width': 1280,
-        'height': 704,        # 720P，Wan2.2 支持的最高分辨率
-    })
-    frames = result[OutputKeys.OUTPUT_VIDEO]
+    clip_files = []
 
-    out_path = f"{OUTPUT_DIR}/v{i:02d}.mp4"
-    imageio.mimsave(out_path, frames, fps=24, codec="libx264", quality=8)
-    print(f"  ✅ v{i:02d}.mp4")
+    for j, p in enumerate(prompts_clips):
+        clip_count += 1
+        print(f"[{i:02d}/{total}] 视频 {j+1}/{num_clips}")
 
-    torch.cuda.empty_cache()
-    gc.collect()
+        result = pipe({
+            'text': p,
+            'num_frames': 120,
+            'width': 1280,
+            'height': 704,
+        })
+        frames = result[OutputKeys.OUTPUT_VIDEO]
+
+        tmp = f"{RAW_DIR}/tmp_{i:02d}_{j}.mp4"
+        imageio.mimsave(tmp, frames, fps=24, codec="libx264", quality=8)
+        clip_files.append(tmp)
+
+        torch.cuda.empty_cache()
+        gc.collect()
+
+    # 拼接多个5秒视频
+    if num_clips == 1:
+        final_raw = clip_files[0]
+    else:
+        final_raw = f"{RAW_DIR}/combined_{i:02d}.mp4"
+        concat_file = f"{RAW_DIR}/list_{i:02d}.txt"
+        with open(concat_file, "w") as f:
+            for cf in clip_files:
+                f.write(f"file '{cf}'\n")
+        subprocess.run([
+            FFMPEG, "-y", "-f", "concat", "-safe", "0",
+            "-i", concat_file,
+            "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+            "-an", "-hide_banner", "-loglevel", "warning",
+            final_raw
+        ], check=True)
+
+    # 计算慢放因子
+    total_raw = num_clips * 5
+    ratio = target_dur / total_raw
+
+    print(f"  → 原始{total_raw}s → 目标{target_dur}s (x{ratio:.2f})")
+
+    if abs(ratio - 1.0) < 0.05:
+        # 几乎不需要慢放，直接复制
+        shutil.copy(final_raw, f"{SEG_DIR}/v{i:02d}.mp4")
+    else:
+        new_fps = round(24 * ratio)
+        subprocess.run([
+            FFMPEG, "-y", "-i", final_raw,
+            "-vf",
+            f"minterpolate=fps={new_fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir,"
+            f"format=yuv420p",
+            "-t", str(target_dur),
+            "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+            "-an", "-hide_banner", "-loglevel", "warning",
+            f"{SEG_DIR}/v{i:02d}.mp4"
+        ], check=True)
+
+    print(f"  ✅ v{i:02d}.mp4 ({target_dur}s)")
 
 elapsed = time.time() - start_time
 print(f"\n{'='*50}")
 print(f"🎉 全部完成！共 {total} 段视频")
-print(f"📁 输出: {OUTPUT_DIR}")
+print(f"⏱ 耗时: {elapsed:.0f} 秒")
+print(f"📁 输出: {SEG_DIR}")
+print(f"💡 下载 v01~v{total:02d}.mp4 到 videos/raw/")
+print(f"   然后运行: python scripts/build_mv.py")
 print(f"{'='*50}")
