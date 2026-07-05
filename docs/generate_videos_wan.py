@@ -1,48 +1,48 @@
 # ============================================================
 # 燕青门 · Wan2.1-14B 文生视频（并行方案2）
 # 运行环境：百度 AI Studio（24GB VRAM）
-# 与 generate_images.py（方案1·SDXL生图）并行，对比效果
+# 使用 ModelScope 原生推理接口（非 diffusers）
 # ============================================================
 
 # 安装依赖（首次运行）
-# pip install torch diffusers transformers accelerate safetensors -q
-# pip install git+https://www.modelscope.cn/Wan-AI/Wan2.1-T2V-14B.git -q
+# pip install modelscope torch -q
 
 import torch
-from diffusers import WanPipeline
-from modelscope import snapshot_download
-import os, gc, time
+from modelscope import pipeline, snapshot_download
+from modelscope.outputs import OutputKeys
+import os, gc, time, imageio
+import numpy as np
 
 # ============================================================
-# 0. 音频路径（已上传）
+# 1. 加载 Wan2.1-14B（ModelScope 原生 pipeline）
 # ============================================================
-SEG_DIR = "/mnt/workspace/yanqingmen_audio"
-if not os.path.exists(SEG_DIR):
-    print(f"⚠️ 请先上传 audio/segments/ 到 {SEG_DIR}")
-    exit(1)
+print("加载 Wan2.1-14B（ModelScope 原生推理）...")
+
+# 方案A: 用 ModelScope pipeline（首选）
+try:
+    pipe = pipeline(
+        "text-to-video",
+        model="Wan-AI/Wan2.1-T2V-14B",
+        device="cuda",
+        torch_dtype=torch.bfloat16
+    )
+    print("✅ Wan2.1 加载成功（ModelScope pipeline）")
+except Exception as e:
+    print(f"ModelScope pipeline 失败: {e}")
+    print("尝试方案B: snapshot_download + 手动加载...")
+
+    # 方案B: 下载后手动指定路径
+    model_dir = snapshot_download('Wan-AI/Wan2.1-T2V-14B')
+    pipe = pipeline(
+        "text-to-video",
+        model=model_dir,
+        device="cuda"
+    )
+    print("✅ Wan2.1 加载成功（本地路径）")
 
 # ============================================================
-# 1. 加载 Wan2.1-14B 模型
+# 2. Prompt（中文 Prompt，Wan2.1 中文理解强于 SDXL）
 # ============================================================
-print("加载 Wan2.1-14B（从 ModelScope 下载，首次约 30GB）...")
-
-model_path = snapshot_download('Wan-AI/Wan2.1-T2V-14B')
-
-pipe = WanPipeline.from_pretrained(
-    model_path,
-    torch_dtype=torch.bfloat16,
-    variant="fp8",  # 8bit量化节省显存
-)
-pipe.to("cuda")
-pipe.enable_model_cpu_offload()  # 省显存
-
-print(f"✅ 模型加载完成，显存: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
-
-# ============================================================
-# 2. Prompt（与方案1相同，但 Wan2.1 更适合中文）
-# ============================================================
-STYLE_PREFIX = "古风武侠，中国水墨画风格，青绿山水配色，诗意氛围，电影感，16:9，"
-
 prompts = [
     # S01-S02 前奏
     "秋日古城全景，金色银杏覆青瓦，斑驳城墙蜿蜒，夕阳暖光从城门透出，云雾缭绕远山，镜头缓慢推进",
@@ -93,55 +93,31 @@ OUTPUT_DIR = "/mnt/workspace/yanqingmen_videos"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 total = len(prompts)
-seed = 42
 start_time = time.time()
 
-# 方案2参数：每段5秒 @ 480p（24GB可跑更高）
-VIDEO_FRAMES = 81   # 81帧 @ 16fps ≈ 5秒
-VIDEO_HEIGHT = 480
-VIDEO_WIDTH = 832
-FPS = 16
-
 for i, prompt in enumerate(prompts, 1):
-    full_prompt = STYLE_PREFIX + prompt
-    generator = torch.Generator("cuda").manual_seed(seed + i)
-
     print(f"[{i:02d}/{total}] 生成视频...")
 
-    video = pipe(
-        prompt=full_prompt,
-        num_frames=VIDEO_FRAMES,
-        num_inference_steps=30,
-        guidance_scale=5.0,
-        height=VIDEO_HEIGHT,
-        width=VIDEO_WIDTH,
-        generator=generator,
-    ).frames[0]
+    # 调用 ModelScope pipeline
+    result = pipe({
+        'text': prompt,
+        'num_frames': 81,     # ~5秒 @ 16fps
+        'width': 832,
+        'height': 480,
+    })
 
-    # 保存为 mp4
-    import imageio
-    import numpy as np
-
-    frames_np = []
-    for frame in video:
-        arr = (frame.cpu().numpy().transpose(1, 2, 0) * 255).clip(0, 255).astype(np.uint8)
-        frames_np.append(arr)
+    frames = result[OutputKeys.OUTPUT_VIDEO]  # numpy array
 
     out_path = f"{OUTPUT_DIR}/v{i:02d}.mp4"
-    imageio.mimsave(out_path, frames_np, fps=FPS, codec="libx264", quality=8)
-    print(f"  ✅ v{i:02d}.mp4 (5秒)")
+    imageio.mimsave(out_path, frames, fps=16, codec="libx264", quality=8)
+    print(f"  ✅ v{i:02d}.mp4")
 
-    # 清理显存
-    del video, frames_np
     torch.cuda.empty_cache()
     gc.collect()
 
 elapsed = time.time() - start_time
 print(f"\n{'='*50}")
 print(f"🎉 全部完成！共 {total} 段视频")
-print(f"⏱ 耗时: {elapsed:.0f} 秒 (约 {elapsed/total:.0f} 秒/段)")
+print(f"⏱ 耗时: {elapsed:.0f} 秒")
 print(f"📁 输出: {OUTPUT_DIR}")
-print(f"\n💡 下载到本地运行 build_mv.py 合成最终MV")
-print(f"   （方案1: videos/raw/ 放 p01~p21.png）")
-print(f"   （方案2: videos/raw/ 放 v01~v21.mp4）")
 print(f"{'='*50}")
