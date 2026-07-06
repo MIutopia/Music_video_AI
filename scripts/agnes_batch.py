@@ -11,9 +11,8 @@ import urllib.request, json, time, os, sys
 
 # 多个 API Key 轮流用（突破每日500秒限制）
 API_KEYS = [
-    "sk-4jVrrvrbe7Mu2Lrh0GGBFUXtrb9alAUrC0M31xERD7cPin9j",  # 主账号
-    # "sk-xxxxx2...",  # 账号2（取消注释后填入）
-    # "sk-xxxxx3...",  # 账号3
+    "sk-4jVrrvrbe7Mu2Lrh0GGBFUXtrb9alAUrC0M31xERD7cPin9j",   # 账号1
+    "sk-bg4CsecmykgLffFq3BELWgiOxW63SsW05wmVwMm8thLM7Zp2",    # 账号2（新）
 ]
 
 # 输出目录
