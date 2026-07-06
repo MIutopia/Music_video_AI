@@ -1,6 +1,6 @@
 # ============================================================
-# 燕青门 MV 合成脚本（可灵15秒版）
-# 21段视频 → 裁剪到目标时长 → 调色 → 拼接 → 字幕 → 音频
+# 燕青门 MV 合成脚本（TeleStudio 54段版）
+# 54段×5秒 → 拼接 → 字幕 → 音频（自动裁剪到262秒）
 # ============================================================
 
 import os, subprocess, glob
@@ -16,15 +16,8 @@ SUBS = os.path.join(PROJ_DIR, "subs", "yanqingmen.srt")
 os.makedirs(CLIP_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# 分段时间表（每段目标时长）
-SEGMENTS = [
-    ("S01", 13), ("S02", 13), ("S03", 12), ("S04", 12), ("S05", 13),
-    ("S06", 13), ("S07", 10), ("S08", 13), ("S09", 9), ("S10", 11),
-    ("S11", 11), ("S12", 15), ("S13", 8), ("S14", 9), ("S15", 14),
-    ("S16", 9), ("S17", 13), ("S18", 11), ("S19", 14), ("S20", 14),
-    ("S21", 14),
-]
-assert sum(s[1] for s in SEGMENTS) == 262
+# 54段 × 5秒 = 270秒，音频262秒，-shortest自动裁剪末尾
+TOTAL_SEGMENTS = 54
 
 # 古风调色滤镜
 GRADE = (
@@ -33,77 +26,27 @@ GRADE = (
     "vignette=PI/5,unsharp=3:3:0.7"
 )
 
-# 检测素材类型
-src_type = None
-for f in sorted(os.listdir(RAW_DIR)):
-    if f.startswith("p") and f.endswith(".mp4"):
-        src_type = "video"
-        break
-    elif f.startswith("p") and f.endswith((".png", ".jpg")):
-        src_type = "image"
-        break
+# 批量标准化所有 5 秒片段
+print(f"📁 处理 {TOTAL_SEGMENTS} 段，每段 5 秒...")
 
-if not src_type:
-    print("❌ 未在 videos/raw/ 中找到 p*.mp4 或 p*.png")
-    exit(1)
-
-print(f"📁 素材类型: {src_type}")
-
-for i, (name, target_dur) in enumerate(SEGMENTS, 1):
+for i in range(1, TOTAL_SEGMENTS + 1):
     num = f"{i:02d}"
-    out_path = os.path.join(CLIP_DIR, f"graded_{num}.mp4")
+    src = os.path.join(RAW_DIR, f"p{num}.mp4")
+    out = os.path.join(CLIP_DIR, f"graded_{num}.mp4")
 
-    if src_type == "video":
-        # 可灵视频：裁剪到目标时长（从开头取）
-        src = os.path.join(RAW_DIR, f"p{num}.mp4")
-        if not os.path.exists(src):
-            # 尝试其他命名模式
-            for f in os.listdir(RAW_DIR):
-                if f.startswith(f"p{num}") and f.endswith(".mp4"):
-                    src = os.path.join(RAW_DIR, f)
-                    break
-        if not os.path.exists(src):
-            print(f"  ⚠️ 未找到 p{num}.mp4")
-            continue
+    if not os.path.exists(src):
+        print(f"  ⚠️ 未找到 p{num}.mp4")
+        continue
 
-        cmd = [
-            FFMPEG, "-y", "-i", src,
-            "-vf", f"{GRADE},format=yuv420p",
-            "-t", str(target_dur),     # 裁剪到目标时长
-            "-c:v", "libx264", "-crf", "18", "-preset", "medium",
-            "-an", "-hide_banner", "-loglevel", "warning",
-            out_path
-        ]
-    else:
-        # 图片：Ken Burns 动画
-        src = os.path.join(RAW_DIR, f"p{num}.png")
-        if not os.path.exists(src):
-            for ext in ["png", "jpg", "jpeg"]:
-                alt = os.path.join(RAW_DIR, f"p{num}.{ext}")
-                if os.path.exists(alt):
-                    src = alt
-                    break
-        if not os.path.exists(src):
-            print(f"  ⚠️ 未找到 p{num}.png")
-            continue
-
-        cmd = [
-            FFMPEG, "-y", "-loop", "1", "-i", src,
-            "-vf",
-            f"scale=3840:2160:force_original_aspect_ratio=increase,"
-            f"crop=1920:1080,"
-            f"zoompan=z='min(zoom+0.0012,1.4)':"
-            f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
-            f"d={target_dur*24}:s=1920x1080:fps=24,"
-            f"{GRADE},format=yuv420p",
-            "-t", str(target_dur),
-            "-c:v", "libx264", "-crf", "20", "-preset", "medium",
-            "-an", "-hide_banner", "-loglevel", "warning",
-            out_path
-        ]
-
-    subprocess.run(cmd)
-    print(f"  [{num}/21] {name} → {target_dur}s ✅")
+    subprocess.run([
+        FFMPEG, "-y", "-i", src,
+        "-vf", f"{GRADE},scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
+        "-t", "5",
+        "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+        "-an", "-hide_banner", "-loglevel", "warning",
+        out
+    ])
+    print(f"  [{num}/{TOTAL_SEGMENTS}] ✅")
 
 # ============================================================
 # 拼接 + 字幕 + 音频
@@ -112,7 +55,7 @@ print("\n[拼接] 合并所有片段...")
 
 list_file = os.path.join(CLIP_DIR, "concat.txt")
 with open(list_file, "w") as f:
-    for i in range(1, 22):
+    for i in range(1, TOTAL_SEGMENTS + 1):
         p = os.path.join(CLIP_DIR, f"graded_{i:02d}.mp4")
         if os.path.exists(p):
             f.write(f"file '{p}'\n")
