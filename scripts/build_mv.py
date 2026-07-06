@@ -1,9 +1,9 @@
 # ============================================================
-# 燕青门 MV 合成脚本（TeleStudio 54段版）
-# 54段×5秒 → 拼接 → 字幕 → 音频（自动裁剪到262秒）
+# 燕青门 MV 合成脚本（40段×5秒 慢放版）
+# 每段5s素材 → 慢放到目标时长 → 调色 → 拼接 → 字幕 → 音频
 # ============================================================
 
-import os, subprocess, glob
+import os, subprocess
 
 FFMPEG = "ffmpeg"
 PROJ_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,83 +16,160 @@ SUBS = os.path.join(PROJ_DIR, "subs", "yanqingmen.srt")
 os.makedirs(CLIP_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# 54段 × 5秒 = 270秒，音频262秒，-shortest自动裁剪末尾
-TOTAL_SEGMENTS = 54
-
 # 古风调色滤镜
-GRADE = (
-    "eq=saturation=0.75:contrast=1.08:brightness=-0.02,"
-    "colorbalance=rs=0.05:gs=-0.03:bs=-0.08,"
-    "vignette=PI/5,unsharp=3:3:0.7"
-)
-
-# 批量标准化所有 5 秒片段
-print(f"📁 处理 {TOTAL_SEGMENTS} 段，每段 5 秒...")
-
-for i in range(1, TOTAL_SEGMENTS + 1):
-    num = f"{i:02d}"
-    src = os.path.join(RAW_DIR, f"p{num}.mp4")
-    out = os.path.join(CLIP_DIR, f"graded_{num}.mp4")
-
-    if not os.path.exists(src):
-        print(f"  ⚠️ 未找到 p{num}.mp4")
-        continue
-
-    subprocess.run([
-        FFMPEG, "-y", "-i", src,
-        "-vf", f"{GRADE},scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
-        "-t", "5",
-        "-c:v", "libx264", "-crf", "18", "-preset", "medium",
-        "-an", "-hide_banner", "-loglevel", "warning",
-        out
-    ])
-    print(f"  [{num}/{TOTAL_SEGMENTS}] ✅")
+GRADE = ("eq=saturation=0.75:contrast=1.08:brightness=-0.02,"
+         "colorbalance=rs=0.05:gs=-0.03:bs=-0.08,"
+         "vignette=PI/5,unsharp=3:3:0.7")
 
 # ============================================================
-# 拼接 + 字幕 + 音频
+# 分镜慢放表（21段，每段含2-3个5秒片段）
+# 格式: [段名, 目标时长, [(片段序号, 慢放倍率), ...]]
+# 备注: fwd_rev=True 表示正反循环
 # ============================================================
-print("\n[拼接] 合并所有片段...")
+SEGMENTS = [
+    ("S01", 13, [(1,1.3), (2,1.3)]),
+    ("S02", 13, [(3,1.3), (4,1.3)]),
+    ("S03", 12, [(5,1.2), (6,1.2)]),
+    ("S04", 12, [(7,1.2), (8,1.2)]),
+    ("S05", 13, [(9,1.3), (10,1.3)]),
+    ("S06", 13, [(11,1.3), (12,1.3)]),
+    ("S07", 13, [(13,1.3), (14,1.3)]),
+    ("S08", 14, [(15,1.4), (16,1.4)]),
+    ("S09", 12, [(17,1.2), (18,1.2)]),
+    ("S10", 11, [(19,1.1), (20,1.1)]),
+    ("S11", 11, [(21,1.1), (22,1.1)]),
+    ("S12", 15, [(23,1.0), (24,1.0), (25,1.0)]),
+    ("S13", 8,  [(26, "fwd_rev")]),     # 正反循环
+    ("S14", 9,  [(27, "fwd_rev")]),     # 正反循环
+    ("S15", 14, [(28,1.4), (29,1.4)]),
+    ("S16", 12, [(30,1.2), (31,1.2)]),
+    ("S17", 13, [(32,1.3), (33,1.3)]),
+    ("S18", 12, [(34,1.2), (35,1.2)]),
+    ("S19", 14, [(36,1.4), (37,1.4)]),
+    ("S20", 14, [(38,1.4), (39,1.4)]),
+    ("S21", 14, [(40,1.4), (41,1.4)]),
+]
 
-list_file = os.path.join(CLIP_DIR, "concat.txt")
-with open(list_file, "w") as f:
-    for i in range(1, TOTAL_SEGMENTS + 1):
-        p = os.path.join(CLIP_DIR, f"graded_{i:02d}.mp4")
+# ============================================================
+# 处理所有片段
+# ============================================================
+clip_idx = 0
+
+for seg_name, target_dur, clips in SEGMENTS:
+    seg_out = os.path.join(CLIP_DIR, f"seg_{seg_name}.mp4")
+    seg_parts = []
+
+    for clip_num, rate in clips:
+        clip_idx += 1
+        src = os.path.join(RAW_DIR, f"p{clip_num:02d}.mp4")
+        part = os.path.join(CLIP_DIR, f"part_{clip_idx:02d}.mp4")
+
+        if not os.path.exists(src):
+            print(f"  ⚠️ 未找到 p{clip_num:02d}.mp4")
+            continue
+
+        if rate == "fwd_rev":
+            # 正反循环：播放→倒放→播放 = 3×5=15s，再裁剪到目标
+            loop = os.path.join(CLIP_DIR, f"loop_{clip_idx:02d}.mp4")
+            # 先正放
+            subprocess.run([FFMPEG, "-y", "-i", src,
+                "-vf", f"{GRADE},format=yuv420p",
+                "-c:v", "libx264", "-crf", "18",
+                "-an", "-hide_banner", "-loglevel", "warning",
+                part], check=True)
+            # 正放+倒放拼接
+            with open(os.path.join(CLIP_DIR, "list.txt"), "w") as f:
+                f.write(f"file '{part}'\n")
+                f.write(f"file '{part}'\n")
+                f.write(f"file '{part}'\n")
+            subprocess.run([FFMPEG, "-y", "-f", "concat", "-safe", "0",
+                "-i", os.path.join(CLIP_DIR, "list.txt"),
+                "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                "-t", str(target_dur),
+                "-an", "-hide_banner", "-loglevel", "warning",
+                seg_parts], check=True)
+            # 用正反循环替代：ffmpeg 的 reverse 滤镜
+            subprocess.run([FFMPEG, "-y", "-i", part, "-i", part,
+                "-filter_complex",
+                "[0:v]reverse[r];[1:v][r]concat=n=2:v=1:a=0,setpts=0.5*PTS",
+                "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+                "-t", str(target_dur),
+                "-an", "-hide_banner", "-loglevel", "warning",
+                seg_parts], check=True)
+            seg_parts = [seg_parts]
+        elif rate == 1.0:
+            # 原速，直接处理
+            subprocess.run([FFMPEG, "-y", "-i", src,
+                "-vf", f"{GRADE},format=yuv420p",
+                "-c:v", "libx264", "-crf", "18",
+                "-an", "-hide_banner", "-loglevel", "warning",
+                part], check=True)
+            seg_parts.append(part)
+        else:
+            # 慢放：minterpolate 运动补偿
+            new_fps = int(24 * rate)
+            subprocess.run([FFMPEG, "-y", "-i", src,
+                "-vf",
+                f"minterpolate=fps={new_fps}:mi_mode=mci:mc_mode=aobmc,"
+                f"{GRADE},format=yuv420p",
+                "-c:v", "libx264", "-crf", "18",
+                "-an", "-hide_banner", "-loglevel", "warning",
+                part], check=True)
+            seg_parts.append(part)
+
+    # 拼接该段所有片段
+    if len(seg_parts) == 1:
+        subprocess.run(["cp" if os.name == "nt" else "cp", seg_parts[0], seg_out],
+                       shell=(os.name == "nt"))
+    else:
+        with open(os.path.join(CLIP_DIR, "seg_list.txt"), "w") as f:
+            for p in seg_parts:
+                f.write(f"file '{p}'\n")
+        subprocess.run([FFMPEG, "-y", "-f", "concat", "-safe", "0",
+            "-i", os.path.join(CLIP_DIR, "seg_list.txt"),
+            "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+            "-an", "-hide_banner", "-loglevel", "warning",
+            seg_out], check=True)
+
+    print(f"  {seg_name} → {target_dur}s ✅")
+
+# ============================================================
+# 拼接所有段 + 字幕 + 音频
+# ============================================================
+print("\n[拼接] 合成最终MV...")
+
+with open(os.path.join(CLIP_DIR, "final_list.txt"), "w") as f:
+    for seg_name, _, _ in SEGMENTS:
+        p = os.path.join(CLIP_DIR, f"seg_{seg_name}.mp4")
         if os.path.exists(p):
             f.write(f"file '{p}'\n")
 
 merged = os.path.join(CLIP_DIR, "merged.mp4")
-subprocess.run([
-    FFMPEG, "-y", "-f", "concat", "-safe", "0",
-    "-i", list_file,
+subprocess.run([FFMPEG, "-y", "-f", "concat", "-safe", "0",
+    "-i", os.path.join(CLIP_DIR, "final_list.txt"),
     "-c:v", "libx264", "-crf", "18", "-preset", "medium",
     "-an", "-hide_banner", "-loglevel", "warning",
-    merged
-], check=True)
-
-print("  拼接完成")
+    merged], check=True)
 
 # 字幕 + 音频
 final = os.path.join(OUTPUT_DIR, "yanqingmen_mv_final.mp4")
-
-if os.path.exists(SUBS) and os.path.exists(AUDIO):
-    cmd = [
-        FFMPEG, "-y",
-        "-i", merged, "-i", AUDIO,
-        "-vf",
-        f"subtitles='{SUBS}':force_style="
-        f"'FontName=STKaiti,FontSize=36,PrimaryColour=&HFFFFFF,"
-        f"OutlineColour=&H1A1A2E,Outline=3,Shadow=2,MarginV=50'",
+if os.path.exists(SUBS):
+    subprocess.run([FFMPEG, "-y", "-i", merged, "-i", AUDIO,
+        "-vf", f"subtitles='{SUBS}':force_style="
+               f"'FontName=STKaiti,FontSize=36,PrimaryColour=&HFFFFFF,"
+               f"OutlineColour=&H1A1A2E,Outline=3,Shadow=2,MarginV=50'",
         "-c:v", "libx264", "-crf", "18", "-preset", "medium",
         "-c:a", "aac", "-b:a", "320k",
         "-shortest", "-map", "0:v:0", "-map", "1:a:0",
         "-movflags", "+faststart",
-        final, "-hide_banner"
-    ]
+        final, "-hide_banner"], check=True)
 else:
-    print("⚠️ 缺少字幕或音频文件")
-    exit(1)
-
-subprocess.run(cmd, check=True)
+    subprocess.run([FFMPEG, "-y", "-i", merged, "-i", AUDIO,
+        "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+        "-c:a", "aac", "-b:a", "320k",
+        "-shortest", "-map", "0:v:0", "-map", "1:a:0",
+        "-movflags", "+faststart",
+        final, "-hide_banner"], check=True)
 
 size = os.path.getsize(final) / (1024*1024)
 print(f"\n{'='*55}")
