@@ -5,8 +5,8 @@
 
 import requests, json, time, os
 
-KEY = "sk-ws-H.EMMXIY.ISmh.MEUCIQDX2AA3e8mDKM7Hv8gxbwxqZYE"
-BASE = "https://ws-i92l9bq2h6q5pd2d.cn-beijing.maas.aliyuncs.com/api/v1"
+KEY = "sk-ws-H.EMMXIIY.8oC2.MEUCIFreghVF_6z1KnJslM-ciGsiLymz2o6VIyxfwhk1GWhtAiEAux1feokP2KUhBEnZK5pY6mxkGLU_Son_xvXRWsmcHJM"
+BASE = "https://ws-l92l9bq2h6q5pd2d.cn-beijing.maas.aliyuncs.com/api/v1"
 OUT = os.path.expanduser("~/Desktop/yanqingmen_videos")
 os.makedirs(OUT, exist_ok=True)
 
