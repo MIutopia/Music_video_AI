@@ -5,7 +5,7 @@
 
 import requests, json, time, os
 
-KEY = "sk-ws-H.EMMXIIY.8oC2.MEUCIFreghVF_6z1KnJslM-ciGsiLymz2o6VIyxfwhk1GWhtAiEAux1feokP2KUhBEnZK5pY6mxkGLU_Son_xvXRWsmcHJM"
+KEY = "sk-ws-H.EMDDMIX.XB4R.MEUCIQDBbPYeB84DAV4QBiNlq-Qc0MgFWWNX85iUhm738qME5gIgIOtWsLVycbCSbl_bWyno79pVmxYuIKuOpIN0b-RMMy0"
 BASE = "https://ws-l92l9bq2h6q5pd2d.cn-beijing.maas.aliyuncs.com/api/v1"
 OUT = os.path.expanduser("~/Desktop/yanqingmen_videos")
 os.makedirs(OUT, exist_ok=True)
@@ -16,7 +16,7 @@ H = {
     "X-DashScope-Async": "enable"
 }
 
-STYLE = "古风水墨画，青绿山水淡彩色调，清透留白，光影柔和，电影级画质，"
+STYLE = "写实古风摄影风格，冷色青蓝调为主，细节清晰质感真实，自然光影，高清电影级画质，"
 
 PROMPTS = [
     STYLE + "秋日古城航拍大远景，金色银杏覆青瓦，城墙蜿蜒如龙，远山云雾缭绕，暖金夕阳从城门透出，宁静悠远，留白构图",
@@ -101,20 +101,24 @@ for i in range(len(PROMPTS)):
     body = json.dumps({
         "model": MODELS[i],
         "input": {"prompt": PROMPTS[i]},
-        "parameters": {"duration": 5, "size": "1280*720"}
+        "parameters": {"duration": 5, "resolution": "720P", "ratio": "16:9", "prompt_extend": False, "watermark": False}
     }).encode()
     for retry in range(3):
         try:
-            r = requests.post(BASE + "/services/aigc/videogeneration/text-to-video",
-                data=body, headers=H, timeout=60).json()
+            resp = requests.post(BASE + "/services/aigc/video-generation/video-synthesis",
+                data=body, headers=H, timeout=60)
+            r = resp.json()
             tid = r.get("output", {}).get("task_id")
             if tid:
                 tasks.append((cn, tid, MODELS[i]))
                 print(f"  [{cn:02d}/41] ✅")
                 break
+            else:
+                if retry >= 2:
+                    print(f"  [{cn:02d}] 返回异常: {resp.status_code} {json.dumps(r)[:200]}")
         except Exception as e:
             if retry < 2: time.sleep(10)
-            else: print(f"  [{cn:02d}] {str(e)[:40]}")
+            else: print(f"  [{cn:02d}] 错误: {type(e).__name__}: {str(e)[:100]}")
     time.sleep(3)
 
 print(f"\n提交 {len(tasks)} 个")

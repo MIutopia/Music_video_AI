@@ -21,3 +21,9 @@ Thumbs.db
 *.log
 temp/
 test_*.ipynb
+
+# 中间文件
+videos/clips/
+videos/raw/
+temp/
+*.srt
